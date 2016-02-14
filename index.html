@@ -49,6 +49,10 @@
 			margin:auto;
 			color:#666;
 		}
+		.word{
+			display:inline-block;
+			white-space:nowrap;
+		}
 		.ticker{
 			display:inline-block;
 			position:relative;
@@ -58,7 +62,15 @@
 			margin-right:-1px;
 			cursor:pointer;
 			margin-top:30px;
+			background:#fff;
 			/*border-radius:3px;*/
+			/*transition:all .2s;*/
+		}
+		.ticker.positive{
+			background:#99ee99;
+		}
+		.ticker.negative{
+			background:#ee9999;
 		}
 		.ticker:after{
 			content:attr(data-name);
@@ -67,12 +79,17 @@
 			left:0;
 			white-space:nowrap;
 			color:#666;
-			display:none
+			font-size:14px;
+			display:none;
 		}
 		.ticker:hover{
-			background-color:#e66;
+			/*background-color:#e66;
 			border-color:#933;
-			color:#fff;
+			color:#fff;*/
+			z-index:666;
+			box-shadow:0 0 5px 1px rgba(0,0,0,0.3);
+			/*border-width:0.9;*/
+			transform:scale(1.1);
 		}
 		.ticker:hover::after{
 			display:block;

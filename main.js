@@ -18,36 +18,35 @@ readFile('csv/stocks.csv', function(csv) {
     data = Papa.parse(csv, {
         header: true
     });
-    console.log(data)
     for(var i = 0; i < data.data.length; i++) {
         ticker[data.data[i].Ticker] = data.data[i]
     }
 })
 
 
-var stockCallback;
-function stockQuery(symbol, callback){
-    stockCallback = callback
-    var url = "http://query.yahooapis.com/v1/public/yql"
-    var urldata = encodeURIComponent("select * from yahoo.finance.quotes where symbol in ('" + symbol + "')")
-    var requrl = url + '?q=' + urldata + '&format=json&diagnostics=true&env=http://datatables.org/alltables.env'
-    /*
-    var req = new XMLHttpRequest();
-    req.open("GET", requrl, false);
-    req.onreadystatechange = function () {
-        if(req.readyState === 4) {
-            if((req.status === 200 || req.status == 0) && typeof callback == 'function') {
-                var allText = req.responseText;
-                callback(allText);
-            }
-        }
-    }
-    req.send(null);*/
-    var script = document.createElement('script');
-    script.type = 'text/javascript'
-    script.src = requrl+'&callback=stockCallback'
+var stockResponses = {}
 
-    document.body.appendChild(script);
+function stockQuery(symbol, callback){
+    var script;
+    var rand = '_'+Math.random()*100000000000000000
+    window[rand] = function(stockData){
+        stockResponses[symbol] = stockData
+        callback(stockData)
+        document.body.removeChild(script)
+    }
+    if(stockResponses[symbol] != undefined){
+        callback(stockResponses[symbol])
+    }else{
+        var url = "http://query.yahooapis.com/v1/public/yql"
+        var urldata = encodeURIComponent("select * from yahoo.finance.quotes where symbol in ('" + symbol + "')")
+        var requrl = url + '?q=' + urldata + '&format=json&diagnostics=true&env=http://datatables.org/alltables.env'
+
+        script = document.createElement('script');
+        script.type = 'text/javascript'
+        script.src = requrl+'&callback='+rand
+
+        document.body.appendChild(script);
+    }
 }
 
 function tick(word) {
@@ -72,7 +71,7 @@ function tick(word) {
             }
         }
     }
-    console.log(arr)
+    //console.log(arr)
     var s = word.length+1;
     var out;
     for(var i = 0; i < arr.length; i++){
@@ -82,6 +81,25 @@ function tick(word) {
         }
     }
     return out
+}
+
+function createTickerElement(symbol){
+    var el = document.createElement('span')
+    el.classList.add('ticker')
+    el.textContent = symbol
+    el.setAttribute('data-name', ticker[symbol].Name)
+
+    stockQuery(symbol, function(stockData){
+        console.log(el)
+        var change = Number(stockData.query.results.quote.ChangeinPercent.substr(0,5))
+        if(change > 0){
+            el.classList.add('positive')
+        }else if(change < 0){
+            el.classList.add('negative')
+        }
+    })
+
+    return el
 }
 
 function parse(e) {
@@ -100,13 +118,15 @@ function parse(e) {
             und.classList.add('undefined')
             output.appendChild(und)
         }else{
+            var word = document.createElement('span')
+            word.classList.add('word')
             for(var i2 = 0; i2 < tickertext[i].length; i2++){
-                var el = document.createElement('span')
-                el.classList.add('ticker')
-                el.textContent = tickertext[i][i2]
-                el.setAttribute('data-name', ticker[tickertext[i][i2]].Name)
-                output.appendChild(el)
+                var symbol = tickertext[i][i2]
+                var hh = createTickerElement(symbol)
+
+                word.appendChild(hh)
             }
+            output.appendChild(word)
         }
         var space = document.createElement('span')
         space.classList.add('space')
@@ -115,6 +135,5 @@ function parse(e) {
 }
 parse()
 document.querySelector('#input').addEventListener('keydown', function(e){
-    console.log('hi')
     setTimeout(parse.bind(null, e), 0)
 })
